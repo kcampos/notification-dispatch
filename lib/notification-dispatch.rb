@@ -48,7 +48,7 @@ module Notification
       # Iterate over keys in client_key_map and return array of active clients
       def get_active_clients
         KEY_MAPS.each_key.inject([]) do |res, client|
-          client_class = Notification::Dispatch.const_get(client.capitalize).new
+          client_class = Notification::Dispatch.const_get(client.to_s.capitalize.intern).new
           client_class.is_active? ? res.push(client_class) : res
         end
       end
