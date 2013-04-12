@@ -7,9 +7,9 @@ Gem::Specification.new do |s|
   s.version     = Notification::Dispatch::VERSION
   s.authors     = ["Kyle Campos"]
   s.email       = ["kyle.campos@gmail.com"]
-  s.homepage    = ""
-  s.summary     = %q{TODO: Write a gem summary}
-  s.description = %q{TODO: Write a gem description}
+  s.homepage    = %q{https://github.com/BioIQ/notification-dispatch}
+  s.summary     = %q{Notification dispatcher to collection of services}
+  s.description = %q{Notification dispatcher to collection of services}
 
   s.rubyforge_project = "notification-dispatch"
 
@@ -20,6 +20,6 @@ Gem::Specification.new do |s|
 
   # specify any dependencies here; for example:
   s.add_development_dependency "rspec"
-  s.add_runtime_dependency "aws-sdk"
+  #s.add_runtime_dependency "aws-sdk"
   s.add_runtime_dependency "dogapi"
 end

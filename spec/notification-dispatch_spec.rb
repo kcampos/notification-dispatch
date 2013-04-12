@@ -2,9 +2,9 @@ require 'spec_helper'
 
 describe Notification do
   describe Notification::Dispatch do
-    let(:map_hash)   { {:aws => {:access_key => 'AWS_ACCESS_KEY', :secret_key => 'AWS_SECRET_KEY'},
+    let(:map_hash)   { {#:aws => {:access_key => 'AWS_ACCESS_KEY', :secret_key => 'AWS_SECRET_KEY'},
                         :datadog => {:api_key => 'DATADOG_API_KEY'}} }
-    let(:key_values) { {:aws => {:access_key => 'aws_access_key_val', :secret_key => 'aws_secret_key_val'},
+    let(:key_values) { {#:aws => {:access_key => 'aws_access_key_val', :secret_key => 'aws_secret_key_val'},
                         :datadog => {:api_key => 'datadog_api_key_val'}} }
 
     def clear_environment
@@ -42,7 +42,7 @@ describe Notification do
           it { should be_empty }
         end
 
-        context "when AWS client is active" do
+        pending "when AWS client is active" do
           before(:each) do
             enable_aws
           end
@@ -80,12 +80,37 @@ describe Notification do
         specify { client.handle_message?(:event, :info).should be_false }
       end
 
+      describe "#message" do
+        let(:msg_subject) { "notification subject" }
+        let(:msg)         { "notification message" }
+        let(:opts)        { {} }
+        let(:msg_classes) { {:event => [:error, :warning, :info, :success]} }
+        let(:msg_class) { :event }
+        let(:msg_type)  { msg_classes[:event].first }
+
+        subject { client.message(msg_class, msg_type, msg_subject, msg, opts) }
+
+        context "with no active clients" do
+          it { should eql(0) }
+        end
+
+        context "with active datadog client" do
+          before(:each) do
+            enable_datadog
+            Dogapi::Client.any_instance.stub_chain(:new, :emit_event).and_return(true)
+            Dogapi::Event.any_instance.stub(:new).and_return(true)
+          end
+
+          it { should eql(1) }
+        end
+      end
+
     end
 
     #
     # AWS Client
     #
-    describe Notification::Dispatch::Aws do
+    pending "Notification::Dispatch::Aws" do
       let(:client) { Notification::Dispatch::Aws.new }
 
       before(:each) do
@@ -214,9 +239,9 @@ describe Notification do
       end
 
       describe "#message" do
-        let(:subject) { "notification subject" }
-        let(:msg)     { "notification message" }
-        let(:opts)    { {} }
+        let(:msg_subject) { "notification subject" }
+        let(:msg)         { "notification message" }
+        let(:opts)        { {} }
 
         before(:each) do
           enable_datadog
@@ -224,14 +249,14 @@ describe Notification do
           Dogapi::Event.any_instance.stub(:new).and_return(true)
         end
 
-        subject { client.message(msg_class, msg_type, subject, msg, opts) }
+        subject { client.message(msg_class, msg_type, msg_subject, msg, opts) }
 
         context "when unable to handle_message" do
           let(:msg_class) { :unknown }
           let(:msg_type)  { :unknown }
 
           it "should raise an error" do 
-            lambda { client.message(msg_class, msg_type, subject, msg, opts) }.should raise_error
+            lambda { client.message(msg_class, msg_type, msg_subject, msg, opts) }.should raise_error
           end
         end
 

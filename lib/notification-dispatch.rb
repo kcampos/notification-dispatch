@@ -1,4 +1,4 @@
-require "notification-dispatch/version"
+#require "notification-dispatch/version"
 
 module Notification
   module Dispatch
@@ -7,7 +7,7 @@ module Notification
       attr_reader :key_map, :clients, :msg_classes
 
       KEY_MAPS = {
-        :aws => {:access_key => 'AWS_ACCESS_KEY', :secret_key => 'AWS_SECRET_KEY'},
+        #:aws => {:access_key => 'AWS_ACCESS_KEY', :secret_key => 'AWS_SECRET_KEY'},
         :datadog => {:api_key => 'DATADOG_API_KEY'}
       }
 
@@ -33,8 +33,14 @@ module Notification
         @msg_classes.has_key?(msg_class) && @msg_classes[msg_class].include?(msg_type)
       end
 
+      # Return number of successful msgs
       def message(msg_class, msg_type, subject, msg, opts={})
-        clients.each { |client| client.message(msg_class, msg_type, subject, msg, opts) unless(!client.handle_message?(msg_class, msg_type)) }
+        success = clients.inject([]) do |result, client|
+          resp = false
+          resp = client.message(msg_class, msg_type, subject, msg, opts) if(client.handle_message?(msg_class, msg_type))
+          resp ? result << resp : result
+        end
+        success.size
       end
 
       private
@@ -49,11 +55,11 @@ module Notification
 
     end
 
-    class Aws < Client
-      def initialize
-        @key_map = self.class::KEY_MAPS[:aws]
-      end
-    end
+    #class Aws < Client
+    #  def initialize
+    #    @key_map = self.class::KEY_MAPS[:aws]
+    #  end
+    #end
 
     class Datadog < Client
       attr_reader :conn, :key
@@ -71,15 +77,19 @@ module Notification
       end
 
       def message(msg_class, msg_type, subject, msg, opts={})
-        raise "Datadog: unsupported msg_class and/or msg_type" unless(handle_message(msg_class, msg_type))
-        options = {:source => 'my apps', :tags => []}
+        raise "Datadog: unsupported msg_class and/or msg_type" unless(handle_message?(msg_class, msg_type))
+        options = {:source => 'my apps', :tags => [], :aggregation_key => nil}
         options.merge!(opts)
         @conn.emit_event(Dogapi::Event.new(
           msg,
           :msg_title        => subject,
           :tags             => options[:tags], 
           :alert_type       => msg_type.to_s,
-          :source_type_name => options[:source]))
+          :source_type_name => options[:source],
+          :aggregation_key  => options[:aggregation_key])
+        )
+
+        true
       end
     end
 
