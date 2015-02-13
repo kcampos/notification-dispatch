@@ -34,7 +34,7 @@ describe Notification do
 
         specify { client.key_map.should be_empty }
         specify { client.msg_classes.should be_empty }
-        specify { client.is_active?.should be_false }
+        specify { client.is_active?.should be == false }
 
         subject { client.clients }
 
@@ -64,7 +64,7 @@ describe Notification do
         subject { client.has_active_clients? }
 
         context "when no clients are configured" do
-          it { should be_false }
+          it { should be == false }
         end
 
         context "when a client is configured" do
@@ -72,12 +72,12 @@ describe Notification do
             enable_datadog
           end
 
-          it { should be_true }
+          it { should be == true }
         end
       end
 
       describe "#handle_message?" do
-        specify { client.handle_message?(:event, :info).should be_false }
+        specify { client.handle_message?(:event, :info).should be == false }
       end
 
       describe "#message" do
@@ -187,11 +187,11 @@ describe Notification do
             enable_datadog
           end
 
-          it { should be_true }
+          it { should be == true }
         end
 
         context "when required env var is not set" do
-          it { should be_false }
+          it { should be == false }
         end
 
       end
@@ -199,10 +199,10 @@ describe Notification do
       describe "#connect" do
         before(:each) do
           enable_datadog
-          Dogapi::Client.any_instance.stub(:new).and_return(true)
+          Dogapi::Client.stub(:new).and_return(true)
         end
 
-        specify { client.connect.should be_true }        
+        specify { client.connect.should be == true }        
       end
 
       describe "#handle_message?" do
@@ -214,12 +214,12 @@ describe Notification do
 
           context "and unknown msg_type" do
             let(:msg_type) { :unknown }
-            it { should be_false }
+            it { should be == false }
           end
 
           context "and known msg_type" do
             let(:msg_type) { msg_classes[:event].first }
-            it { should be_false }
+            it { should be == false }
           end
         end
 
@@ -228,12 +228,12 @@ describe Notification do
 
           context "and unknown msg_type" do
             let(:msg_type) { :unknown }
-            it { should be_false }
+            it { should be == false }
           end
 
           context "and known msg_type" do
             let(:msg_type) { msg_classes[:event].first }
-            it { should be_true }
+            it { should be == true }
           end
         end
       end
@@ -264,7 +264,7 @@ describe Notification do
           let(:msg_class) { :event }
           let(:msg_type)  { msg_classes[:event].first }
 
-          it { should be_true }
+          it { should be == true }
         end
       end
 

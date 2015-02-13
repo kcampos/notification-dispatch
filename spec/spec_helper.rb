@@ -9,7 +9,7 @@ require 'dogapi'
 
 # Set test env vars
 RSpec.configure do |c|
-  c.color_enabled = true
+  c.color = true
   #c.filter_run :focus => true
   #c.filter_run :broken => true
   c.filter_run_excluding :broken => true
