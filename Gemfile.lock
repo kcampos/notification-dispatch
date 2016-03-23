@@ -11,6 +11,7 @@ GEM
     dogapi (1.15.0)
       json (>= 1.5.1)
     json (1.8.2)
+    rake (10.4.2)
     rspec (3.2.0)
       rspec-core (~> 3.2.0)
       rspec-expectations (~> 3.2.0)
@@ -31,4 +32,8 @@ PLATFORMS
 DEPENDENCIES
   dogapi
   notification-dispatch!
+  rake
   rspec
+
+BUNDLED WITH
+   1.11.2
