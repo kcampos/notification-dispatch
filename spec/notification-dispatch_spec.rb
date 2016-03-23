@@ -8,54 +8,48 @@ describe Notification do
                         :datadog => {:api_key => 'datadog_api_key_val'}} }
 
     def clear_environment
-      map_hash.values.each {|key_hash| key_hash.each_value {|val| ENV.stub(:[]).with(val).and_return("") }}
+      map_hash.values.each {|key_hash| key_hash.each_value {|val| allow(ENV).to receive(:[]).with(val).and_return("") }}
     end
 
     def enable_aws
-      ENV.stub(:[]).with(map_hash[:aws][:access_key]).and_return(key_values[:aws][:access_key])
-      ENV.stub(:[]).with(map_hash[:aws][:secret_key]).and_return(key_values[:aws][:secret_key])
+      allow(ENV).to receive(:[]).with(map_hash[:aws][:access_key]).and_return(key_values[:aws][:access_key])
+      allow(ENV).to receive(:[]).with(map_hash[:aws][:secret_key]).and_return(key_values[:aws][:secret_key])
     end
 
     def enable_datadog
-      ENV.stub(:[]).with(map_hash[:datadog][:api_key]).and_return(key_values[:datadog][:api_key])
-      ENV.stub(:[]).with("DATADOG_HOST").and_return('localhost')
+      allow(ENV).to receive(:[]).with(map_hash[:datadog][:api_key]).and_return(key_values[:datadog][:api_key])
+      allow(ENV).to receive(:[]).with("DATADOG_HOST").and_return('localhost')
     end
 
     describe Notification::Dispatch::Client do
       let(:client) { Notification::Dispatch::Client.new }
 
-      before(:each) do
-        clear_environment
-      end
+      before(:each) { clear_environment }
 
-      specify { Notification::Dispatch::Client::KEY_MAPS.should eql(map_hash)}
+      specify { expect(Notification::Dispatch::Client::KEY_MAPS).to eql(map_hash) }
 
       describe "#initialize" do
 
-        specify { client.key_map.should be_empty }
-        specify { client.msg_classes.should be_empty }
-        specify { client.is_active?.should be == false }
+        specify { expect(client.key_map).to be_empty }
+        specify { expect(client.msg_classes).to be_empty }
+        specify { expect(client.is_active?).to be false }
 
         subject { client.clients }
 
         context "when no clients are configured" do
-          it { should be_empty }
+          it { expect(subject).to be_empty }
         end
 
         pending "when AWS client is active" do
-          before(:each) do
-            enable_aws
-          end
+          before(:each) { enable_aws }
 
-          it { should_not be_empty }
+          it { expect(subject).to_not be_empty }
         end
 
         context "when Datadog client is active" do
-          before(:each) do
-            enable_datadog
-          end
+          before(:each) { enable_datadog }
 
-          it { should_not be_empty }
+          it { expect(subject).to_not be_empty }
         end
       end
 
@@ -64,20 +58,18 @@ describe Notification do
         subject { client.has_active_clients? }
 
         context "when no clients are configured" do
-          it { should be == false }
+          it { expect(subject).to be false }
         end
 
         context "when a client is configured" do
-          before(:each) do
-            enable_datadog
-          end
+          before(:each) { enable_datadog }
 
-          it { should be == true }
+          it { expect(subject).to be true }
         end
       end
 
       describe "#handle_message?" do
-        specify { client.handle_message?(:event, :info).should be == false }
+        specify { expect(client.handle_message?(:event, :info)).to be false }
       end
 
       describe "#message" do
@@ -91,17 +83,17 @@ describe Notification do
         subject { client.message(msg_class, msg_type, msg_subject, msg, opts) }
 
         context "with no active clients" do
-          it { should eql(0) }
+          it { expect(subject).to eql(0) }
         end
 
         context "with active datadog client" do
           before(:each) do
             enable_datadog
-            Dogapi::Client.any_instance.stub_chain(:new, :emit_event).and_return(true)
-            Dogapi::Event.any_instance.stub(:new).and_return(true)
+            allow(Dogapi::Client).to receive_message_chain(:new, :emit_event) { true }
+            allow(Dogapi::Event).to receive(:new).and_return(true)
           end
 
-          it { should eql(1) }
+          it { expect(subject).to eql(1) }
         end
       end
 
@@ -161,20 +153,18 @@ describe Notification do
 
       describe "#initialize" do
         
-        specify { client.key_map.should eql(map_hash[:datadog]) }
-        specify { client.msg_classes.should eql(msg_classes) }
+        specify { expect(client.key_map).to eql(map_hash[:datadog]) }
+        specify { expect(client.msg_classes).to eql(msg_classes) }
 
         context "when not active" do
-          specify { client.conn.should be_nil }
+          specify { expect(client.conn).to be_nil }
         end
 
         context "when active" do
-          before(:each) do
-            enable_datadog
-          end
+          before(:each) { enable_datadog }
 
-          specify { client.conn.should_not be_nil }
-          specify { client.key.should eql(key_values[:datadog][:api_key]) }
+          specify { expect(client.conn).to_not be_nil }
+          specify { expect(client.key).to eql(key_values[:datadog][:api_key]) }
         end
       end
 
@@ -183,15 +173,13 @@ describe Notification do
         subject { client.is_active? }
 
         context "when required env var is set" do
-          before(:each) do
-            enable_datadog
-          end
+          before(:each) { enable_datadog }
 
-          it { should be == true }
+          it { should be true }
         end
 
         context "when required env var is not set" do
-          it { should be == false }
+          it { should be false }
         end
 
       end
@@ -199,10 +187,10 @@ describe Notification do
       describe "#connect" do
         before(:each) do
           enable_datadog
-          Dogapi::Client.stub(:new).and_return(true)
+          allow(Dogapi::Client).to receive(:new).and_return(true)
         end
 
-        specify { client.connect.should be == true }        
+        specify { expect(client.connect).to be true }        
       end
 
       describe "#handle_message?" do
@@ -214,12 +202,12 @@ describe Notification do
 
           context "and unknown msg_type" do
             let(:msg_type) { :unknown }
-            it { should be == false }
+            it { should be false }
           end
 
           context "and known msg_type" do
             let(:msg_type) { msg_classes[:event].first }
-            it { should be == false }
+            it { should be false }
           end
         end
 
@@ -228,12 +216,12 @@ describe Notification do
 
           context "and unknown msg_type" do
             let(:msg_type) { :unknown }
-            it { should be == false }
+            it { should be false }
           end
 
           context "and known msg_type" do
             let(:msg_type) { msg_classes[:event].first }
-            it { should be == true }
+            it { should be true }
           end
         end
       end
@@ -245,8 +233,8 @@ describe Notification do
 
         before(:each) do
           enable_datadog
-          Dogapi::Client.any_instance.stub_chain(:new, :emit_event).and_return(true)
-          Dogapi::Event.any_instance.stub(:new).and_return(true)
+          allow(Dogapi::Client).to receive_message_chain(:new, :emit_event) { true }
+          allow(Dogapi::Event).to receive(:new).and_return(true)
         end
 
         subject { client.message(msg_class, msg_type, msg_subject, msg, opts) }
@@ -256,7 +244,7 @@ describe Notification do
           let(:msg_type)  { :unknown }
 
           it "should raise an error" do 
-            lambda { client.message(msg_class, msg_type, msg_subject, msg, opts) }.should raise_error
+            expect(lambda { client.message(msg_class, msg_type, msg_subject, msg, opts) }).to raise_error
           end
         end
 
@@ -264,7 +252,7 @@ describe Notification do
           let(:msg_class) { :event }
           let(:msg_type)  { msg_classes[:event].first }
 
-          it { should be == true }
+          it { should be true }
         end
       end
 
