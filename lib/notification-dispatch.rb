@@ -4,11 +4,17 @@ module Notification
   module Dispatch
 
     class Client
-      attr_reader :key_map, :clients, :msg_classes
+      attr_reader :key_map, :clients, :msg_classes, :conn
 
       KEY_MAPS = {
         #:aws => {:access_key => 'AWS_ACCESS_KEY', :secret_key => 'AWS_SECRET_KEY'},
-        :datadog => {:api_key => 'DATADOG_API_KEY'}
+        :datadog => {:api_key => 'DATADOG_API_KEY'},
+        :keen    => {
+          :project_id => 'KEEN_PROJECT_ID',
+          :master_key => 'KEEN_MASTER_KEY',
+          :write_key  => 'KEEN_WRITE_KEY',
+          :read_key   => 'KEEN_READ_KEY'
+        }
       }
 
       def initialize
@@ -55,14 +61,8 @@ module Notification
 
     end
 
-    #class Aws < Client
-    #  def initialize
-    #    @key_map = self.class::KEY_MAPS[:aws]
-    #  end
-    #end
-
     class Datadog < Client
-      attr_reader :conn, :key
+      attr_reader :key
 
       def initialize
         @key_map     = self.class::KEY_MAPS[:datadog]
@@ -90,6 +90,24 @@ module Notification
         )
 
         true
+      end
+    end
+
+    class Keen < Client
+      def initialize
+        @key_map     = self.class::KEY_MAPS[:keen]
+        @msg_classes = {:metric => [:counter, :gauge]}
+        @conn        = self.is_active? ? connect : nil
+      end
+
+      def connect
+        require 'keen'
+      end
+
+      def message(msg_class, msg_type, subject, msg, opts={})
+        raise "Keen: unsupported msg_class and/or msg_type" unless(handle_message?(msg_class, msg_type))
+        raise "must pass collection and hash of data in opts" unless(!opts[:collection].nil? && !opts[:data].nil?)
+        ::Keen.publish(opts[:collection], opts[:data])
       end
     end
 
