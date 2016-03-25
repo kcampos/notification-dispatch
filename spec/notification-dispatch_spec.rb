@@ -316,7 +316,7 @@ describe Notification do
           context "and both collection and data options are specified" do
             context "and data option is an array" do
               let(:data) { [{:array => :hash}] }
-              before(:each) { expect(Keen).to receive(:publish_batch).with(message_data[:collection], message_data[:data]).and_return(true) }
+              before(:each) { expect(Keen).to receive(:publish_batch).with(message_data[:collection] => message_data[:data]).and_return(true) }
 
               it { should be true }
             end
