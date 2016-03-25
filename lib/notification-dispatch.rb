@@ -107,7 +107,7 @@ module Notification
       def message(msg_class, msg_type, subject, msg, opts={})
         raise "Keen: unsupported msg_class and/or msg_type" unless(handle_message?(msg_class, msg_type))
         raise "must pass collection and hash of data in opts" unless(!opts[:collection].nil? && !opts[:data].nil?)
-        ::Keen.publish(opts[:collection], opts[:data])
+        opts[:data].class == Array ? ::Keen.publish_batch(opts[:collection], opts[:data]) : ::Keen.publish(opts[:collection], opts[:data])
       end
     end
 

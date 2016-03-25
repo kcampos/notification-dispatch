@@ -287,9 +287,10 @@ describe Notification do
         context "when able to handle_message" do
           let(:msg_class) { :metric }
           let(:msg_type)  { msg_classes[:metric].first }
+          let(:data) { { :some => :hash } }
           let(:message_data) { {
               :collection => "test_collection",
-              :data => { :some => :hash }
+              :data => data
             }
           }
           let(:opts) { message_data }
@@ -304,7 +305,26 @@ describe Notification do
             end
           end
 
-          it { should be true }
+          context "and missing data option" do
+            let(:message_data) { {:collection => :some_collection } }
+
+            it "should raise an exception" do
+              expect(lambda { client.message(msg_class, msg_type, msg_subject, msg, opts) }).to raise_error
+            end
+          end
+
+          context "and both collection and data options are specified" do
+            context "and data option is an array" do
+              let(:data) { [{:array => :hash}] }
+              before(:each) { expect(Keen).to receive(:publish_batch).with(message_data[:collection], message_data[:data]).and_return(true) }
+
+              it { should be true }
+            end
+
+            context "and data option is not an array" do
+              it { should be true }
+            end
+          end
         end
       end
     end
